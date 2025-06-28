@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Simple WhatsApp-like Chat App</title>
+  <style>
+    body {
+      background: #ece5dd;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+    #app {
+      width: 380px;
+      margin: 30px auto;
+      border-radius: 18px;
+      background: #fff;
+      box-shadow: 0 4px 32px #0002;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 600px;
+    }
+    .header {
+      background: #075e54;
+      color: #fff;
+      padding: 16px;
+      font-size: 1.25em;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .contacts {
+      background: #f7f7f7;
+      padding: 10px 0;
+      border-bottom: 1px solid #ddd;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+    }
+    .contact {
+      background: #25d366;
+      color: #fff;
+      border-radius: 16px;
+      padding: 6px 12px;
+      font-size: 1em;
+      cursor: pointer;
+      margin-left: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .contact.selected {
+      background: #075e54;
+    }
+    .contact .call-btn {
+      background: #34b7f1;
+      border: none;
+      border-radius: 100%;
+      width: 22px;
+      height: 22px;
+      color: #fff;
+      font-size: 1em;
+      margin-left: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .add-contact-btn {
+      background: #128c7e;
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      padding: 7px 14px;
+      margin-left: 10px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    #addNumberModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000a;
+      align-items: center;
+      justify-content: center;
+      z-index: 11;
+    }
+    #addNumberModal.show {
+      display: flex;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 26px 24px;
+      border-radius: 12px;
+      min-width: 260px;
+      box-shadow: 0 6px 24px #0003;
+    }
+    .modal-content input {
+      width: 90%;
+      margin-top: 10px;
+      padding: 7px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: 1px solid #bbb;
+    }
+    .modal-content button {
+      margin-top: 14px;
+      padding: 7px 18px;
+      border-radius: 8px;
+      background: #25d366;
+      color: #fff;
+      border: none;
+      font-size: 1em;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    #chatArea {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px 8px 18px 18px;
+      background: #ece5dd;
+      display: flex;
+      flex-direction: column;
+    }
+    .message {
+      max-width: 70%;
+      margin-bottom: 14px;
+      padding: 8px 16px;
+      border-radius: 18px 18px 4px 18px;
+      background: #dcf8c6;
+      align-self: flex-end;
+      font-size: 1em;
+    }
+    .message.other {
+      background: #fff;
+      align-self: flex-start;
+      border-radius: 18px 18px 18px 4px;
+    }
+    #chatInputArea {
+      padding: 10px;
+      display: flex;
+      background: #f0f0f0;
+      border-top: 1px solid #ddd;
+      gap: 6px;
+    }
+    #chatInput {
+      flex: 1;
+      font-size: 1em;
+      padding: 10px;
+      border-radius: 16px;
+      border: 1px solid #bbb;
+    }
+    #sendBtn {
+      background: #25d366;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      font-size: 1.4em;
+      cursor: pointer;
+      margin-left: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #callingModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000b;
+      align-items: center;
+      justify-content: center;
+      z-index: 12;
+    }
+    #callingModal.show {
+      display: flex;
+    }
+    .calling-content {
+      background: #fff;
+      color: #232946;
+      padding: 30px 28px;
+      border-radius: 12px;
+      min-width: 220px;
+      box-shadow: 0 6px 24px #0003;
+      text-align: center;
+      font-size: 1.2em;
+    }
+    .calling-content button {
+      margin-top: 16px;
+      padding: 7px 18px;
+      border-radius: 8px;
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      font-size: 1em;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div class="header">
+      <span>Rudra WhatsApp</span>
+    </div>
+    <div class="contacts" id="contactsBar">
+      <!-- Contacts will be rendered here -->
+      <button class="add-contact-btn" onclick="showAddNumberModal()">+ Add</button>
+    </div>
+    <div id="chatArea"></div>
+    <div id="chatInputArea">
+      <input id="chatInput" type="text" placeholder="Type a message" autocomplete="off" />
+      <button id="sendBtn">&#9658;</button>
+    </div>
+  </div>
+
+  <!-- Add Number Modal -->
+  <div id="addNumberModal">
+    <div class="modal-content">
+      <h3>Add New Number</h3>
+      <input id="newNumberInput" type="text" placeholder="Enter number (e.g. 9876543210)" maxlength="15" />
+      <br>
+      <button onclick="addNumber()">Add</button>
+      <button style="background:#e74c3c;" onclick="hideAddNumberModal()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Calling Modal -->
+  <div id="callingModal">
+    <div class="calling-content">
+      <div id="callingText"></div>
+      <button onclick="endCall()">End Call</button>
+    </div>
+  </div>
+
+  <script>
+    // App State
+    let contacts = [
+      {number: "9876543210", chat: [{from:"other",text:"Hi! Welcome to chat."}]},
+      {number: "1234567890", chat: [{from:"me",text:"Hello!"},{from:"other",text:"Hey there!"}]}
+    ];
+    let selectedContact = 0;
+
+    function renderContacts() {
+      const contactsBar = document.getElementById("contactsBar");
+      contactsBar.innerHTML = '';
+      contacts.forEach((c, idx) => {
+        const el = document.createElement('div');
+        el.className = 'contact' + (selectedContact===idx ? ' selected' : '');
+        el.innerHTML = `+${c.number}
+          <button class="call-btn" title="Call" onclick="event.stopPropagation();doCall('${c.number}')">&#128222;</button>`;
+        el.onclick = () => { selectContact(idx); };
+        contactsBar.appendChild(el);
+      });
+      // Add button
+      const addBtn = document.createElement('button');
+      addBtn.className = 'add-contact-btn';
+      addBtn.textContent = '+ Add';
+      addBtn.onclick = showAddNumberModal;
+      contactsBar.appendChild(addBtn);
+    }
+
+    function renderChat() {
+      const chatArea = document.getElementById("chatArea");
+      if(contacts.length === 0) {
+        chatArea.innerHTML = "<div style='margin:60px 0;color:#888'>No chats yet. Add a number to start chatting.</div>";
+        return;
+      }
+      const msgs = contacts[selectedContact].chat;
+      chatArea.innerHTML = '';
+      msgs.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'message' + (msg.from==='me'?'':' other');
+        div.textContent = msg.text;
+        chatArea.appendChild(div);
+      });
+      chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function selectContact(idx) {
+      selectedContact = idx;
+      renderContacts();
+      renderChat();
+    }
+
+    // Add number modal logic
+    function showAddNumberModal() {
+      document.getElementById('addNumberModal').classList.add('show');
+      setTimeout(()=>{document.getElementById('newNumberInput').focus()}, 100);
+    }
+    function hideAddNumberModal() {
+      document.getElementById('addNumberModal').classList.remove('show');
+      document.getElementById('newNumberInput').value = '';
+    }
+    function addNumber() {
+      let val = document.getElementById('newNumberInput').value.trim();
+      if(!/^\d{6,15}$/.test(val)) {
+        alert("Please enter a valid number (6-15 digits).");
+        return;
+      }
+      contacts.push({number: val, chat: [{from:"other", text:"Hi! Start chatting!"}]});
+      hideAddNumberModal();
+      selectContact(contacts.length - 1);
+      renderContacts();
+      renderChat();
+    }
+
+    // Chat send
+    document.getElementById('sendBtn').onclick = sendChatMsg;
+    document.getElementById('chatInput').addEventListener('keydown', function(e){
+      if(e.key === 'Enter') sendChatMsg();
+    });
+    function sendChatMsg() {
+      const input = document.getElementById('chatInput');
+      let txt = input.value.trim();
+      if(!txt || contacts.length === 0) return;
+      contacts[selectedContact].chat.push({from:"me", text: txt});
+      input.value = '';
+      renderChat();
+      // Optionally, simulate a reply after a second
+      setTimeout(() => {
+        if(Math.random()<0.7) {
+          contacts[selectedContact].chat.push({from:"other", text: getAutoReply(txt)});
+          renderChat();
+        }
+      }, 1000);
+    }
+    function getAutoReply(msg) {
+      const replies = [
+        "Okay!",
+        "Nice to hear from you.",
+        "How are you?",
+        "👍",
+        "Let's catch up soon.",
+        "Haha!",
+        "I'm busy right now.",
+        "Got it!",
+        "Sure!",
+        "Thanks!"
+      ];
+      return replies[Math.floor(Math.random()*replies.length)];
+    }
+
+    // Calling simulation
+    function doCall(number) {
+      document.getElementById('callingModal').classList.add('show');
+      document.getElementById('callingText').innerHTML = `Calling <b>+${number}</b>...<br><span style="font-size:2em;">&#128222;</span>`;
+    }
+    function endCall() {
+      document.getElementById('callingModal').classList.remove('show');
+    }
+
+    // Init
+    renderContacts();
+    renderChat();
+
+    // Responsive chat area update on window resize
+    window.addEventListener('resize', renderChat);
+  </script>
+</body>
+</html>
